@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -19,7 +20,8 @@
             --text-secondary: #a1a1aa;
         }
 
-        body, html {
+        body,
+        html {
             margin: 0;
             padding: 0;
             width: 100%;
@@ -90,7 +92,7 @@
         }
 
         .loc-list::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.2);
+            background: rgba(255, 255, 255, 0.2);
             border-radius: 10px;
         }
 
@@ -107,7 +109,8 @@
             gap: 8px;
         }
 
-        .loc-item:hover, .loc-item.active {
+        .loc-item:hover,
+        .loc-item.active {
             background: rgba(79, 70, 229, 0.2);
             border-color: var(--primary);
             transform: translateY(-2px);
@@ -167,17 +170,19 @@
         .leaflet-control-attribution {
             filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
         }
-        
+
         .leaflet-popup-content-wrapper {
             background: rgba(25, 25, 35, 0.9) !important;
             backdrop-filter: blur(8px);
             color: white !important;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
         }
+
         .leaflet-popup-tip {
             background: rgba(25, 25, 35, 0.9) !important;
         }
+
         .leaflet-popup-content {
             font-family: 'Outfit', sans-serif;
         }
@@ -214,7 +219,7 @@
             border-radius: 30px;
             font-family: 'Outfit', sans-serif;
             font-weight: 600;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
             cursor: pointer;
         }
 
@@ -240,11 +245,12 @@
                 border: none;
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
             }
+
             .leaflet-control-container .leaflet-bottom {
                 bottom: 60%;
                 transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             }
-            
+
             #closeSidebarBtn {
                 display: block;
             }
@@ -252,19 +258,22 @@
             body.sidebar-collapsed .sidebar {
                 transform: translateY(120%);
             }
+
             body.sidebar-collapsed #mobileToggle {
                 display: block;
             }
+
             body.sidebar-collapsed .leaflet-control-container .leaflet-bottom {
                 bottom: 80px;
             }
         }
     </style>
 </head>
+
 <body>
 
     <div id="map"></div>
-    
+
     <button id="mobileToggle" onclick="document.body.classList.remove('sidebar-collapsed')">
         <i class="fa-solid fa-list"></i> Show List
     </button>
@@ -273,13 +282,15 @@
         <div class="sidebar-header">
             <h1>Regional Routing Dashboard</h1>
             <div style="display: flex; justify-content: space-between; align-items: center;">
-                <p style="margin:0;"><i class="fa-solid fa-location-dot"></i> <span id="locCount">15</span> Locations</p>
+                <p style="margin:0;"><i class="fa-solid fa-location-dot"></i> <span id="locCount">15</span> Locations
+                </p>
                 <button id="closeSidebarBtn" onclick="document.body.classList.add('sidebar-collapsed')">
                     <i class="fa-solid fa-xmark"></i>
                 </button>
             </div>
             <div style="display: flex; gap: 8px; margin-top: 10px;">
-                <select id="filterHighway" style="flex:1; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px; font-size: 0.75rem; font-family: 'Outfit'; cursor: pointer; outline: none;">
+                <select id="filterHighway"
+                    style="flex:1; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px; font-size: 0.75rem; font-family: 'Outfit'; cursor: pointer; outline: none;">
                     <option value="all">All Routes</option>
                     <option value="Jaipur Highway">Jaipur Hwy (NH11)</option>
                     <option value="Sri Ganganagar">Ganganagar Hwy (NH62)</option>
@@ -287,7 +298,8 @@
                     <option value="Jaisalmer">Jaisalmer Hwy (NH11)</option>
                     <option value="Pugal">Pugal Rd (SH3)</option>
                 </select>
-                <select id="sortOption" style="flex:1; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px; font-size: 0.75rem; font-family: 'Outfit'; cursor: pointer; outline: none;">
+                <select id="sortOption"
+                    style="flex:1; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px; font-size: 0.75rem; font-family: 'Outfit'; cursor: pointer; outline: none;">
                     <option value="default">Default Sort</option>
                     <option value="distAsc">Distance: Nearest</option>
                     <option value="distDesc">Distance: Farthest</option>
@@ -303,12 +315,12 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         const baseCoords = [28.0229, 73.3119];
-        
+
         // Map Initialization with dark theme tiles
         const map = L.map('map', {
             zoomControl: false
         }).setView(baseCoords, 9);
-        
+
         L.control.zoom({ position: 'topright' }).addTo(map);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -324,7 +336,7 @@
             iconAnchor: [13, 13]
         });
 
-        L.marker(baseCoords, {icon: originIcon}).addTo(map)
+        L.marker(baseCoords, { icon: originIcon }).addTo(map)
             .bindPopup('<b>Base City</b><br>Origin Point')
             .openPopup();
 
@@ -360,7 +372,7 @@
 
         // Add markers once
         locs.forEach((loc) => {
-            const marker = L.marker(loc.coords, {icon: destinationIcon});
+            const marker = L.marker(loc.coords, { icon: destinationIcon });
             const mapsLink = `https://www.google.com/maps/dir/?api=1&origin=${atob('QmlrYW5lciwrUmFqYXN0aGFu')}&destination=${encodeURIComponent(loc.area + atob('LCBCaWthbmVyLCBSYWphc3RoYW4='))}`;
             marker.bindPopup(`
                 <strong style="font-size:1.1rem;color:#a5b4fc;">${loc.area}</strong><br>
@@ -383,12 +395,12 @@
         function updateList() {
             const filterVal = document.getElementById('filterHighway').value;
             const sortVal = document.getElementById('sortOption').value;
-            
+
             let filtered = [...locs];
             if (filterVal !== 'all') {
                 filtered = filtered.filter(loc => loc.road.includes(filterVal));
             }
-            
+
             if (sortVal === 'distAsc') {
                 filtered.sort((a, b) => a.dist - b.dist);
             } else if (sortVal === 'distDesc') {
@@ -399,11 +411,11 @@
 
             document.getElementById('locCount').innerText = filtered.length;
             listContainer.innerHTML = '';
-            
+
             // Show/Hide markers on map based on filter
             locs.forEach(loc => map.removeLayer(markers[loc.id]));
             filtered.forEach(loc => markers[loc.id].addTo(map));
-            
+
             filtered.forEach((loc, index) => {
                 const mapsLink = `https://www.google.com/maps/dir/?api=1&origin=${atob('QmlrYW5lciwrUmFqYXN0aGFu')}&destination=${encodeURIComponent(loc.area + atob('LCBCaWthbmVyLCBSYWphc3RoYW4='))}`;
                 const item = document.createElement('div');
@@ -421,7 +433,7 @@
                         </a>
                     </div>
                 `;
-                
+
                 item.onclick = () => {
                     document.querySelectorAll('.loc-item').forEach(el => {
                         el.classList.remove('active');
@@ -435,7 +447,7 @@
                     fetch(`https://router.project-osrm.org/route/v1/driving/${baseCoords[1]},${baseCoords[0]};${loc.coords[1]},${loc.coords[0]}?overview=full&geometries=geojson`)
                         .then(response => response.json())
                         .then(data => {
-                            if(data.routes && data.routes.length > 0) {
+                            if (data.routes && data.routes.length > 0) {
                                 const routeCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
                                 currentLine = L.polyline(routeCoords, { color: '#6366f1', weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }).addTo(map);
                                 map.fitBounds(currentLine.getBounds(), { padding: [50, 50], duration: 1.5 });
@@ -453,8 +465,8 @@
                 };
                 listContainer.appendChild(item);
             });
-            
-            if(filtered.length > 0) {
+
+            if (filtered.length > 0) {
                 const allCoords = filtered.map(s => s.coords);
                 allCoords.push(baseCoords);
                 map.fitBounds(L.latLngBounds(allCoords), { padding: [20, 20] });
@@ -473,4 +485,5 @@
         }
     </script>
 </body>
+
 </html>
