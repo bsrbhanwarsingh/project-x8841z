@@ -182,6 +182,24 @@
             font-family: 'Outfit', sans-serif;
         }
 
+        .custom-tooltip {
+            background: rgba(25, 25, 35, 0.85);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            border-radius: 6px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            backdrop-filter: blur(4px);
+            white-space: nowrap;
+        }
+        .leaflet-tooltip-left.custom-tooltip::before,
+        .leaflet-tooltip-right.custom-tooltip::before,
+        .leaflet-tooltip-top.custom-tooltip::before,
+        .leaflet-tooltip-bottom.custom-tooltip::before {
+            border: none;
+        }
+
         #mobileToggle {
             display: none;
             position: absolute;
@@ -350,6 +368,14 @@
                 <div style="margin-top:8px;color:#cbd5e1;">Distance: ~${loc.dist} km</div>
                 <a href="${mapsLink}" target="_blank" style="display:inline-block;margin-top:10px;color:#fff;background:#4F46E5;padding:6px 12px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.8rem;">View on Google Maps</a>
             `);
+
+            marker.bindTooltip(`<b>${loc.area}</b> - ${loc.name}<br>Distance: ${loc.dist} km`, {
+                permanent: true,
+                direction: 'top',
+                offset: [0, -10],
+                className: 'custom-tooltip'
+            });
+
             markers[loc.id] = marker;
             marker.addTo(map);
         });
@@ -440,6 +466,11 @@
 
         // Initial render
         updateList();
+
+        // Hide sidebar by default on mobile
+        if (window.innerWidth <= 768) {
+            document.body.classList.add('sidebar-collapsed');
+        }
     </script>
 </body>
 </html>
