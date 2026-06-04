@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bikaner School Route Map</title>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4F46E5;
+            --surface: rgba(25, 25, 35, 0.75);
+            --text: #ffffff;
+            --text-secondary: #a1a1aa;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: 'Outfit', sans-serif;
+            overflow: hidden;
+            background-color: #000;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .sidebar {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 380px;
+            height: calc(100% - 40px);
+            z-index: 10;
+            background: var(--surface);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            color: var(--text);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-header {
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.05);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .sidebar-header p {
+            margin: 8px 0 0 0;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .school-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        .school-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .school-list::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.2);
+            border-radius: 10px;
+        }
+
+        .school-item {
+            padding: 16px;
+            border-radius: 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .school-item:hover, .school-item.active {
+            background: rgba(79, 70, 229, 0.2);
+            border-color: var(--primary);
+            transform: translateY(-2px);
+        }
+
+        .school-name {
+            font-weight: 600;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .school-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .distance-badge {
+            background: rgba(79, 70, 229, 0.3);
+            color: #c7d2fe;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: background 0.2s;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+
+        .nav-btn:hover {
+            background: #4338ca;
+        }
+
+        /* Leaflet custom styling */
+        .leaflet-layer,
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out,
+        .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        }
+        
+        .leaflet-popup-content-wrapper {
+            background: rgba(25, 25, 35, 0.9) !important;
+            backdrop-filter: blur(8px);
+            color: white !important;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+        }
+        .leaflet-popup-tip {
+            background: rgba(25, 25, 35, 0.9) !important;
+        }
+        .leaflet-popup-content {
+            font-family: 'Outfit', sans-serif;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>Bikaner Counseling Routes</h1>
+            <p><i class="fa-solid fa-location-dot"></i> 15 Schools Available</p>
+        </div>
+        <div class="school-list" id="schoolList">
+            <!-- Items injected by JS -->
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        const bikanerCoords = [28.0229, 73.3119];
+        
+        // Map Initialization with dark theme tiles
+        const map = L.map('map', {
+            zoomControl: false
+        }).setView(bikanerCoords, 9);
+        
+        L.control.zoom({ position: 'topright' }).addTo(map);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Bikaner Origin Marker
+        const originIcon = L.divIcon({
+            html: '<div style="background:#4F46E5;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 0 15px rgba(79,70,229,0.8);"></div>',
+            className: '',
+            iconSize: [26, 26],
+            iconAnchor: [13, 13]
+        });
+
+        L.marker(bikanerCoords, {icon: originIcon}).addTo(map)
+            .bindPopup('<b>Bikaner City</b><br>Origin Point')
+            .openPopup();
+
+        const schools = [
+            { id: 70, name: "SMT GEETA DEVI BAGARI GOVT. GIRLS SSS", area: "Napasar", dist: 27, coords: [27.9733, 73.5458] },
+            { id: 69, name: "GOVT. SENIOR SECONDARY SCHOOL", area: "Sherera", dist: 45, coords: [28.25, 73.35] },
+            { id: 71, name: "GOVT. SENIOR SECONDARY SCHOOL", area: "Kolayat", dist: 50, coords: [27.8443, 72.9647] },
+            { id: 83, name: "GOVT. SENIOR SECONDARY SCHOOL", area: "Dulchasar", dist: 51, coords: [27.98, 73.85] },
+            { id: 78, name: "GOVT. SENIOR SECONDARY SCHOOL", area: "Berasar", dist: 60, coords: [27.53, 73.25] },
+            { id: 72, name: "GOVT. SENIOR SECONDARY SCHOOL KALOO", area: "Lunkaransar", dist: 75, coords: [28.52, 73.80] },
+            { id: 73, name: "GOVT. SENIOR SECONDARY SCHOOL", area: "Lunkaransar", dist: 75, coords: [28.5020, 73.7483] },
+            { id: 75, name: "GOVT. GIRLS SENIOR SECONDARY SCHOOL", area: "Lunkaransar", dist: 75, coords: [28.5040, 73.7460] },
+            { id: 76, name: "GOVT. SENIOR SECONDARY SCHOOL", area: "Himmatsar", dist: 80, coords: [27.75, 73.33] },
+            { id: 79, name: "GOVT. SENIOR SECONDARY SCHOOL", area: "Chhattargarh", dist: 85, coords: [28.6186, 72.8464] },
+            { id: 81, name: "GOVT. SENIOR SECONDARY SCHOOL", area: "Bigga", dist: 85, coords: [28.11, 74.02] },
+            { id: 77, name: "GOVT. SENIOR SECONDARY SCHOOL", area: "Kakra", dist: 88, coords: [27.60, 73.23] },
+            { id: 84, name: "GOVT. SENIOR SECONDARY SCHOOL", area: "Gusainsar Bada", dist: 90, coords: [28.10, 73.95] },
+            { id: 82, name: "GOVT. SENIOR SECONDARY SCHOOL UPANI", area: "Sridungargarh", dist: 91, coords: [28.25, 74.05] },
+            { id: 74, name: "GOVT. SENIOR SECONDARY SCHOOL", area: "Shekhsar", dist: 108, coords: [28.60, 73.85] },
+            { id: 80, name: "GOVT. SENIOR SECONDARY SCHOOL", area: "Momasar", dist: 110, coords: [28.14, 74.34] },
+        ];
+
+        const listContainer = document.getElementById('schoolList');
+        let currentLine = null;
+        const markers = {};
+
+        const destinationIcon = L.divIcon({
+            html: '<div style="background:#ef4444;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 10px rgba(239,68,68,0.8);"></div>',
+            className: '',
+            iconSize: [18, 18],
+            iconAnchor: [9, 9]
+        });
+
+        schools.forEach((school, index) => {
+            // Add marker
+            const marker = L.marker(school.coords, {icon: destinationIcon}).addTo(map);
+            markers[school.id] = marker;
+
+            const mapsLink = `https://www.google.com/maps/dir/?api=1&origin=Bikaner,+Rajasthan&destination=${encodeURIComponent(school.area + ', Bikaner, Rajasthan')}`;
+
+            marker.bindPopup(`
+                <strong style="font-size:1.1rem;color:#a5b4fc;">${school.area}</strong><br>
+                <span style="color:#e2e8f0;font-size:0.9rem;">${school.name}</span><br>
+                <div style="margin-top:8px;color:#cbd5e1;">Distance: ~${school.dist} km</div>
+                <a href="${mapsLink}" target="_blank" style="display:inline-block;margin-top:10px;color:#fff;background:#4F46E5;padding:6px 12px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.8rem;">View on Google Maps</a>
+            `);
+
+            // Add to sidebar
+            const item = document.createElement('div');
+            item.className = 'school-item';
+            item.innerHTML = `
+                <div class="school-name">${index + 1}. ${school.name} - ${school.area}</div>
+                <div class="school-meta">
+                    <span class="distance-badge"><i class="fa-solid fa-route"></i> ~${school.dist} km</span>
+                    <span>SR NO: ${school.id}</span>
+                </div>
+                <div style="height: 0; overflow: hidden; transition: height 0.3s;" id="action-${school.id}">
+                    <a href="${mapsLink}" target="_blank" class="nav-btn" onclick="event.stopPropagation()">
+                        <i class="fa-solid fa-location-arrow"></i> Navigate
+                    </a>
+                </div>
+            `;
+            
+            item.onclick = () => {
+                // Reset others
+                document.querySelectorAll('.school-item').forEach(el => {
+                    el.classList.remove('active');
+                    el.querySelector('div[id^="action-"]').style.height = '0';
+                });
+                
+                // Activate this
+                item.classList.add('active');
+                document.getElementById(`action-${school.id}`).style.height = '36px';
+
+                if (currentLine) {
+                    map.removeLayer(currentLine);
+                }
+
+                // Fetch actual road route using OSRM API (Free, no key required)
+                fetch(`https://router.project-osrm.org/route/v1/driving/${bikanerCoords[1]},${bikanerCoords[0]};${school.coords[1]},${school.coords[0]}?overview=full&geometries=geojson`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if(data.routes && data.routes.length > 0) {
+                            // OSRM returns [lon, lat], Leaflet needs [lat, lon]
+                            const routeCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                            currentLine = L.polyline(routeCoords, {
+                                color: '#6366f1',
+                                weight: 5,
+                                opacity: 0.9,
+                                lineCap: 'round',
+                                lineJoin: 'round'
+                            }).addTo(map);
+                            map.fitBounds(currentLine.getBounds(), { padding: [50, 50], duration: 1.5 });
+                        } else {
+                            // Fallback to straight dashed line
+                            currentLine = L.polyline([bikanerCoords, school.coords], {
+                                color: '#818cf8', weight: 3, opacity: 0.8, dashArray: '10, 10'
+                            }).addTo(map);
+                            const bounds = L.latLngBounds([bikanerCoords, school.coords]);
+                            map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+                        }
+                        marker.openPopup();
+                    })
+                    .catch(err => {
+                        console.error("Routing error:", err);
+                        // Fallback to straight dashed line
+                        currentLine = L.polyline([bikanerCoords, school.coords], {
+                            color: '#818cf8', weight: 3, opacity: 0.8, dashArray: '10, 10'
+                        }).addTo(map);
+                        const bounds = L.latLngBounds([bikanerCoords, school.coords]);
+                        map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
+                        marker.openPopup();
+                    });
+            };
+
+            listContainer.appendChild(item);
+        });
+
+        // Initial fit bounds to see all markers
+        const allCoords = schools.map(s => s.coords);
+        allCoords.push(bikanerCoords);
+        map.fitBounds(L.latLngBounds(allCoords), { padding: [20, 20] });
+    </script>
+</body>
+</html>
