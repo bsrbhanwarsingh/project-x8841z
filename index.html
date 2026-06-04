@@ -190,7 +190,24 @@
     <div class="sidebar">
         <div class="sidebar-header">
             <h1>Regional Routing Dashboard</h1>
-            <p><i class="fa-solid fa-location-dot"></i> 15 Locations Available</p>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <p style="margin:0;"><i class="fa-solid fa-location-dot"></i> <span id="locCount">15</span> Locations</p>
+            </div>
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
+                <select id="filterHighway" style="flex:1; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px; font-size: 0.75rem; font-family: 'Outfit'; cursor: pointer; outline: none;">
+                    <option value="all">All Routes</option>
+                    <option value="Jaipur Highway">Jaipur Hwy (NH11)</option>
+                    <option value="Sri Ganganagar">Ganganagar Hwy (NH62)</option>
+                    <option value="Jodhpur">Jodhpur Hwy (NH62)</option>
+                    <option value="Jaisalmer">Jaisalmer Hwy (NH11)</option>
+                    <option value="Pugal">Pugal Rd (SH3)</option>
+                </select>
+                <select id="sortOption" style="flex:1; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.1); border-radius: 6px; padding: 6px; font-size: 0.75rem; font-family: 'Outfit'; cursor: pointer; outline: none;">
+                    <option value="default">Default Sort</option>
+                    <option value="distAsc">Distance: Nearest</option>
+                    <option value="distDesc">Distance: Farthest</option>
+                </select>
+            </div>
         </div>
         <div class="loc-list" id="locList">
             <!-- Items injected by JS -->
@@ -256,96 +273,106 @@
             iconAnchor: [9, 9]
         });
 
-        locs.forEach((loc, index) => {
-            // Add marker
-            const marker = L.marker(loc.coords, {icon: destinationIcon}).addTo(map);
-            markers[loc.id] = marker;
-
+        // Add markers once
+        locs.forEach((loc) => {
+            const marker = L.marker(loc.coords, {icon: destinationIcon});
             const mapsLink = `https://www.google.com/maps/dir/?api=1&origin=${atob('QmlrYW5lciwrUmFqYXN0aGFu')}&destination=${encodeURIComponent(loc.area + atob('LCBCaWthbmVyLCBSYWphc3RoYW4='))}`;
-
             marker.bindPopup(`
                 <strong style="font-size:1.1rem;color:#a5b4fc;">${loc.area}</strong><br>
                 <span style="color:#e2e8f0;font-size:0.9rem;">${loc.name}</span><br>
                 <div style="margin-top:8px;color:#cbd5e1;">Distance: ~${loc.dist} km</div>
                 <a href="${mapsLink}" target="_blank" style="display:inline-block;margin-top:10px;color:#fff;background:#4F46E5;padding:6px 12px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.8rem;">View on Google Maps</a>
             `);
-
-            // Add to sidebar
-            const item = document.createElement('div');
-            item.className = 'loc-item';
-            item.innerHTML = `
-                <div class="loc-name">${index + 1}. ${loc.name} - ${loc.area}</div>
-                <div style="font-size: 0.8rem; color: #a5b4fc; font-weight: 600;"><i class="fa-solid fa-road" style="margin-right:4px;"></i> ${loc.road}</div>
-                <div class="loc-meta">
-                    <span class="distance-badge"><i class="fa-solid fa-route"></i> ~${loc.dist} km</span>
-                    <span>SR NO: ${loc.id}</span>
-                </div>
-                <div style="height: 0; overflow: hidden; transition: height 0.3s;" id="action-${loc.id}">
-                    <a href="${mapsLink}" target="_blank" class="nav-btn" onclick="event.stopPropagation()">
-                        <i class="fa-solid fa-location-arrow"></i> Navigate
-                    </a>
-                </div>
-            `;
-            
-            item.onclick = () => {
-                // Reset others
-                document.querySelectorAll('.loc-item').forEach(el => {
-                    el.classList.remove('active');
-                    el.querySelector('div[id^="action-"]').style.height = '0';
-                });
-                
-                // Activate this
-                item.classList.add('active');
-                document.getElementById(`action-${loc.id}`).style.height = '36px';
-
-                if (currentLine) {
-                    map.removeLayer(currentLine);
-                }
-
-                // Fetch actual road route using OSRM API (Free, no key required)
-                fetch(`https://router.project-osrm.org/route/v1/driving/${baseCoords[1]},${baseCoords[0]};${loc.coords[1]},${loc.coords[0]}?overview=full&geometries=geojson`)
-                    .then(response => response.json())
-                    .then(data => {
-                        if(data.routes && data.routes.length > 0) {
-                            // OSRM returns [lon, lat], Leaflet needs [lat, lon]
-                            const routeCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-                            currentLine = L.polyline(routeCoords, {
-                                color: '#6366f1',
-                                weight: 5,
-                                opacity: 0.9,
-                                lineCap: 'round',
-                                lineJoin: 'round'
-                            }).addTo(map);
-                            map.fitBounds(currentLine.getBounds(), { padding: [50, 50], duration: 1.5 });
-                        } else {
-                            // Fallback to straight dashed line
-                            currentLine = L.polyline([baseCoords, loc.coords], {
-                                color: '#818cf8', weight: 3, opacity: 0.8, dashArray: '10, 10'
-                            }).addTo(map);
-                            const bounds = L.latLngBounds([baseCoords, loc.coords]);
-                            map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
-                        }
-                        marker.openPopup();
-                    })
-                    .catch(err => {
-                        console.error("Routing error:", err);
-                        // Fallback to straight dashed line
-                        currentLine = L.polyline([baseCoords, loc.coords], {
-                            color: '#818cf8', weight: 3, opacity: 0.8, dashArray: '10, 10'
-                        }).addTo(map);
-                        const bounds = L.latLngBounds([baseCoords, loc.coords]);
-                        map.flyToBounds(bounds, { padding: [50, 50], duration: 1.5 });
-                        marker.openPopup();
-                    });
-            };
-
-            listContainer.appendChild(item);
+            markers[loc.id] = marker;
+            marker.addTo(map);
         });
 
-        // Initial fit bounds to see all markers
-        const allCoords = locs.map(s => s.coords);
-        allCoords.push(baseCoords);
-        map.fitBounds(L.latLngBounds(allCoords), { padding: [20, 20] });
+        function updateList() {
+            const filterVal = document.getElementById('filterHighway').value;
+            const sortVal = document.getElementById('sortOption').value;
+            
+            let filtered = [...locs];
+            if (filterVal !== 'all') {
+                filtered = filtered.filter(loc => loc.road.includes(filterVal));
+            }
+            
+            if (sortVal === 'distAsc') {
+                filtered.sort((a, b) => a.dist - b.dist);
+            } else if (sortVal === 'distDesc') {
+                filtered.sort((a, b) => b.dist - a.dist);
+            } else {
+                filtered.sort((a, b) => a.id - b.id);
+            }
+
+            document.getElementById('locCount').innerText = filtered.length;
+            listContainer.innerHTML = '';
+            
+            // Show/Hide markers on map based on filter
+            locs.forEach(loc => map.removeLayer(markers[loc.id]));
+            filtered.forEach(loc => markers[loc.id].addTo(map));
+            
+            filtered.forEach((loc, index) => {
+                const mapsLink = `https://www.google.com/maps/dir/?api=1&origin=${atob('QmlrYW5lciwrUmFqYXN0aGFu')}&destination=${encodeURIComponent(loc.area + atob('LCBCaWthbmVyLCBSYWphc3RoYW4='))}`;
+                const item = document.createElement('div');
+                item.className = 'loc-item';
+                item.innerHTML = `
+                    <div class="loc-name">${index + 1}. ${loc.name} - ${loc.area}</div>
+                    <div style="font-size: 0.8rem; color: #a5b4fc; font-weight: 600;"><i class="fa-solid fa-road" style="margin-right:4px;"></i> ${loc.road}</div>
+                    <div class="loc-meta">
+                        <span class="distance-badge"><i class="fa-solid fa-route"></i> ~${loc.dist} km</span>
+                        <span>SR NO: ${loc.id}</span>
+                    </div>
+                    <div style="height: 0; overflow: hidden; transition: height 0.3s;" id="action-${loc.id}">
+                        <a href="${mapsLink}" target="_blank" class="nav-btn" onclick="event.stopPropagation()">
+                            <i class="fa-solid fa-location-arrow"></i> Navigate
+                        </a>
+                    </div>
+                `;
+                
+                item.onclick = () => {
+                    document.querySelectorAll('.loc-item').forEach(el => {
+                        el.classList.remove('active');
+                        el.querySelector('div[id^="action-"]').style.height = '0';
+                    });
+                    item.classList.add('active');
+                    document.getElementById(`action-${loc.id}`).style.height = '36px';
+
+                    if (currentLine) map.removeLayer(currentLine);
+
+                    fetch(`https://router.project-osrm.org/route/v1/driving/${baseCoords[1]},${baseCoords[0]};${loc.coords[1]},${loc.coords[0]}?overview=full&geometries=geojson`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if(data.routes && data.routes.length > 0) {
+                                const routeCoords = data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+                                currentLine = L.polyline(routeCoords, { color: '#6366f1', weight: 5, opacity: 0.9, lineCap: 'round', lineJoin: 'round' }).addTo(map);
+                                map.fitBounds(currentLine.getBounds(), { padding: [50, 50], duration: 1.5 });
+                            } else {
+                                currentLine = L.polyline([baseCoords, loc.coords], { color: '#818cf8', weight: 3, opacity: 0.8, dashArray: '10, 10' }).addTo(map);
+                                map.flyToBounds(L.latLngBounds([baseCoords, loc.coords]), { padding: [50, 50], duration: 1.5 });
+                            }
+                            markers[loc.id].openPopup();
+                        })
+                        .catch(err => {
+                            currentLine = L.polyline([baseCoords, loc.coords], { color: '#818cf8', weight: 3, opacity: 0.8, dashArray: '10, 10' }).addTo(map);
+                            map.flyToBounds(L.latLngBounds([baseCoords, loc.coords]), { padding: [50, 50], duration: 1.5 });
+                            markers[loc.id].openPopup();
+                        });
+                };
+                listContainer.appendChild(item);
+            });
+            
+            if(filtered.length > 0) {
+                const allCoords = filtered.map(s => s.coords);
+                allCoords.push(baseCoords);
+                map.fitBounds(L.latLngBounds(allCoords), { padding: [20, 20] });
+            }
+        }
+
+        document.getElementById('filterHighway').addEventListener('change', updateList);
+        document.getElementById('sortOption').addEventListener('change', updateList);
+
+        // Initial render
+        updateList();
     </script>
 </body>
 </html>
