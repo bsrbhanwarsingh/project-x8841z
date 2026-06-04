@@ -197,6 +197,11 @@
             padding: 4px 8px;
             backdrop-filter: blur(4px);
             white-space: nowrap;
+            transition: opacity 0.2s ease;
+        }
+        body.hide-map-labels .custom-tooltip {
+            opacity: 0 !important;
+            pointer-events: none;
         }
         .leaflet-tooltip-left.custom-tooltip::before,
         .leaflet-tooltip-right.custom-tooltip::before,
@@ -322,6 +327,17 @@
         }).setView(baseCoords, 9);
 
         L.control.zoom({ position: 'topright' }).addTo(map);
+
+        function updateTooltipVisibility() {
+            if (map.getZoom() < 10) {
+                document.body.classList.add('hide-map-labels');
+            } else {
+                document.body.classList.remove('hide-map-labels');
+            }
+        }
+        
+        map.on('zoomend', updateTooltipVisibility);
+        updateTooltipVisibility();
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
